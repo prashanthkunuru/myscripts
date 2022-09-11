@@ -1,0 +1,162 @@
+---
+
+###################################################################################
+#
+# Overview: Playbook to install the Process Manager Action Server application.
+# Description: 
+#   - Ensures that a host is configured to run the Action Server.
+# Version: v1.0
+# SME: Maldonado, Amy <amaldonado9@gainwelltechnologies.com>
+#
+###################################################################################
+
+# Create web server FQDN to be used in the Molina config file web server endpoint url value
+- name: "Create Web Server FQDN variable"
+  ansible.builtin.set_fact:
+    web_server_fqdn: 
+      "{% for host in groups['PMW'] %}
+        {{hostvars[host]['ansible_fqdn']}}
+      {% endfor %}"
+
+# The EC2 instances have a secondary volume associated but not configured.
+# This yaml file contains the tasks required to initialize and format the disk.
+- name: "Initialize and format the D drive"
+  import_tasks: initialize_disk.yml
+
+# Check to see if the temp download directory exists.
+- name: "Check if {{ download_dir }} exists"
+  ansible.windows.win_stat:
+    path: '{{ download_dir }}'
+  register: download_dir_info
+
+# Create the temporary directory to pull down the artifacts to install Corticon.  
+- name: "Create {{ download_dir }} directory for artifact downloads"
+  ansible.windows.win_file:
+    path: '{{ download_dir }}'
+    state: directory
+  when: download_dir_info.stat.exists == False
+
+# Download artifacts required for the Action Server deployment.
+- name: "Download required software for Action Server installation"
+  ansible.windows.win_get_url:
+    url: "{{ item }}"
+    dest: "{{ download_dir }}"
+    url_username: "{{ artifactory_username }}"
+    url_password: "{{ artifactory_password }}"
+    force: no
+  loop: '{{ artifacts }}'
+   
+# Install pre-requisite applications required for Action Server deployment.
+- name: "Install Pre-requisite software"
+  ansible.windows.win_package:
+    path: "{{ download_dir }}\\{{ item }}"
+    arguments: /quiet
+    state: present
+  loop:
+  - Microsoft WSE 3.0.msi
+ 
+# Enable Windows features required for the logging services to run.
+- name: "Install Pre-requisites (IIS and .Net Framework)"
+  ansible.windows.win_feature:
+    include_sub_features: yes
+    name:
+      - NET-Framework-Core
+      - Web-Server
+      - Web-Mgmt-Console
+      - Web-Mgmt-Compat
+      - Web-Windows-Auth
+      - Web-Mgmt-Compat
+      - NET-WCF-Services45
+      - NET-Framework-Features
+      - NET-Framework-Core
+      - NET-Framework-45-Features
+      - NET-Framework-45-Core
+      - NET-Framework-45-ASPNET
+    state: present
+  register: prereq_features
+
+# Registry entry that the installers look for to verify IIS verson.
+# The installers to not recognize version 10, so this reg merge will
+# update the key to show IIS version 6 for the installer to work. 
+- name: "Merge in the IIS registry file for app installations"
+  community.windows.win_regmerge:
+    path: '{{ download_dir }}\{{ gainwell_iis_reg_6 }}'
+
+# Create parent directories for the installer and log data directories
+- name: "Create parent directory for Action Server install and log folder"
+  ansible.windows.win_file:
+    path: '{{ custom_dir }}'
+    state: directory
+  loop: '{{ custom_app_dirs }}'
+  loop_control:
+    loop_var: custom_dir
+
+# Application installers.  .msi and .msp installers are used.
+# The pause is required because the app does a silent install 
+# but does not wait to compleation before ansible proceeds to
+# the next item in the loop.  The initial installer must complete
+# before the patch(es) run.
+#
+# The win_shell module is used because the win_package module
+# will not take the property arguments that are required for 
+# these installers to work as silent installers.
+- name: "Install Action Server 5.0 P8"
+  ansible.windows.win_shell: '{{ installer }}'
+  loop: '{{ action_server_installers }}'
+  loop_control:
+    loop_var: installer
+    pause: 10
+
+# Registry entry that sets the IIS version back to 10 after app installs. 
+- name: "Merge in the IIS registry file post-application installation"
+  community.windows.win_regmerge:
+    path: '{{ download_dir }}\{{ gainwell_iis_reg_10 }}'
+
+# DLLs need to be added. Need to find apropriate location on the file system.
+- name: "Copy .dll files to the application folder"
+  ansible.windows.win_copy:
+    src: '{{ download_dir }}\{{ dll }}'
+    dest: '{{ app_folder }}'
+    remote_src: yes
+  loop: '{{ dll_files }}'
+  loop_control:
+    loop_var: dll
+
+# Add service account to the local Administrators group so that it can 
+# manage the Action Server service.
+- name: "Add the domain service account to the local Administrators group"
+  ansible.windows.win_group_membership:
+    name: Administrators
+    members:
+      - '{{ hcls_lev_svc_domain}}\{{ hcls_lev_svc_username }}'
+    state: present
+
+# Set rights that are required to be able to manage the Action Server service.
+- name: "Grant '{{ hcls_lev_svc_domain}}\\{{ hcls_lev_svc_username }}' the SeServiceLogonRight user right"
+  ansible.windows.win_user_right:
+    name: SeServiceLogonRight
+    users:
+    - '{{ hcls_lev_svc_domain}}\{{ hcls_lev_svc_username }}'
+    action: add
+
+# Configure the domain service account to run the Action Server service.
+- name: "Set '{{ hcls_lev_svc_domain}}\\{{ hcls_lev_svc_username }}' as the log on user of the Action Server windows service"
+  ansible.windows.win_service:
+    name: ActionServerControllerP8
+    state: restarted
+    username: '{{ hcls_lev_svc_domain}}\{{ hcls_lev_svc_username }}'
+    password: '{{ hcls_lev_svc_password }}'
+
+# Create the Molina.ProcessManager.ActionServerController.exe.config file from a Jinja2 template.
+- name: "Create Molina.ProcessManager.ActionServerController.exe.config from a Jinja2 template"
+  ansible.windows.win_template:
+    src: 'Molina.ProcessManager.ActionServerController.exe.config.j2'
+    dest: '{{ app_folder }}\Molina.ProcessManager.ActionServerController.exe.config'
+
+# Copy the config files to the correct directory
+- name: "Copy the config files to the correct directory"
+  ansible.windows.win_copy:
+    src: '{{ item.name }}'
+    dest: '{{ item.dir }}'
+  loop: 
+    '{{ config_files }}'

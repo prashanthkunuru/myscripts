@@ -1,0 +1,4 @@
+---
+# handlers file for processman-client
+- name: "Restart IIS"
+  win_shell: '& {iisreset}'

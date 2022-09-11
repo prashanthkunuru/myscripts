@@ -1,0 +1,56 @@
+---
+# vars file for logging service
+
+base_jfrog_url: 'https://gwproductengineering.jfrog.io/artifactory/process-manager-local'
+gainwell_common_url: 'https://gwproductengineering.jfrog.io/artifactory/common/gainwell'
+process_manager_folder: 'process-manager-local'
+gainwell_common_folder: 'common/gainwell'
+artifacts:
+  - 'EventLoggingService.zip'
+  - 'TraceLoggingService.zip'
+  - 'WebLoggingService.zip'
+common_artifacts:
+  - 'iis-version-10.reg'
+  - 'iis-version-6.reg'
+gainwell_iis_reg_10: 'iis-version-10.reg'
+gainwell_iis_reg_6: 'iis-version-6.reg'
+
+# Installer Product_id is set in the registry and is used
+# to verify installation or to uninstall the applications.
+logging_services:
+  - path: '{{download_dir}}\EventLogService.msi'
+    product_id: 'D9B8331B-F1AB-4BC2-87AB-346D9FBDCF89'
+    iis_app_pool: 'LoggingAppPool'
+    iis_app_path: 'c:\inetpub\wwwroot\EventLogService'
+    iis_app_site: 'Default Web Site'
+    iis_app_name: 'EventLogService'
+    iis_web_config: 'EventLogService.web.config.j2'
+    installed_on: 'ActionServer'
+  - path: '{{download_dir}}\TracingService.msi'
+    product_id: '6663BFE8-B664-4315-B3AD-7369D85177B5' 
+    iis_app_pool: 'LoggingAppPool'
+    iis_app_path: 'c:\inetpub\wwwroot\TracingService'
+    iis_app_site: 'Default Web Site'
+    iis_app_name: 'TracingService'
+    iis_web_config: 'TracingService.web.config.j2'
+    installed_on: 'ALL'
+  - path: '{{download_dir}}\WebLoggingService.msi'
+    product_id: 'E898023E-1F8F-4DE2-8DA1-7C199634CB0C'
+    iis_app_pool: 'LoggingAppPool'
+    iis_app_path: 'c:\inetpub\wwwroot\WebLoggingService'
+    iis_app_site: 'Default Web Site'
+    iis_app_name: 'WebLoggingService'
+    iis_web_config: 'WebLogService.web.config.j2'
+    installed_on: 'WebApplicationServer'
+
+# Variables for the logging application web.config jinja2 templates
+web_config_data_source: '10.134.11.5\TXDEVENVPRMGR,50008'
+# web.config variables for the EventLogService
+eventlog_initial_catalog: 'PRMGR'
+eventlog_log_file_path: 'D:\MMISAppsData\EventLogService\PMEventLog.txt'
+# web.config variables for the TracingService
+tracelog_initial_catalog: 'PRMGR'
+tracelog_log_file_path: 'D:\MMISAppsData\TracingService\TraceLog.txt'
+# web.config variables for the WebLogService
+weblog_initial_catalog: 'PMLogging'
+weblog_log_file_path: 'D:\MMISAppsData\WebLogService\PMWebLogging.txt'

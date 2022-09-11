@@ -1,0 +1,23 @@
+---
+- hosts: all
+  gather_facts: true
+  tasks:
+    - name: Group EC2 hosts by 'host_type' EC2 tag
+      ansible.builtin.group_by:
+        key: "{{ tags.host_type }}"
+
+    - name: Include 'processman-webserver' role
+      ansible.builtin.include_role:
+        name: processman-webserver
+      when: 
+        - tags.host_type|upper == 'PMW'
+
+    - name: Include 'processman-actionserver' role
+      ansible.builtin.include_role:
+        name: processman-actionserver
+      when: 
+        - tags.host_type|upper == 'PMA'
+
+    - name: Include 'logging-service' role
+      ansible.builtin.include_role:
+        name: logging-service

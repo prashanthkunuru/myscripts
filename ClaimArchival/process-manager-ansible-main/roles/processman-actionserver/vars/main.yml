@@ -1,0 +1,61 @@
+---
+# vars file for processman-actionserver service
+
+base_jfrog_url: 'https://gwproductengineering.jfrog.io/artifactory'
+gainwell_common_jfrog_folder: 'common/gainwell'
+process_manager_jfrog_folder: 'process-manager-local'
+artifacts:
+  - '{{ base_jfrog_url }}/{{ process_manager_jfrog_folder }}/Microsoft%20WSE%203.0.msi'
+  - '{{ base_jfrog_url }}/{{ process_manager_jfrog_folder }}/PM%205.0%20Release%20-%205.6.0%20-%202015.10.09/MSI/PM%205.6.0%20Action%20Server%20Full%20Deployment.zip!/Action%20Server/ActionServerControllerP8.msi'
+  - '{{ base_jfrog_url }}/{{ process_manager_jfrog_folder }}/PM%205.0%20Release%20-%205.6.6%20-%202017.01.30/MSI/PM%205.6.6%20Action%20Server%20P8%20Patch.zip!/PM%205.6.6%20Action%20Server%20P8%20Patch.msi'
+  - '{{ base_jfrog_url }}/{{ process_manager_jfrog_folder }}/PM%205.0%20Release%20-%205.6.6.1%20-%202017.06.15/P8%20ONLY_5.6.6.1%20Action%20Server%20Deployment%20Files.zip!/P8%20ONLY_5.6.6.1%20Action%20Server%20Deployment%20Files/Molina.ProcessManager.Common.dll'
+  - '{{ base_jfrog_url }}/{{ process_manager_jfrog_folder }}/PM%205.0%20Release%20-%205.6.6.1%20-%202017.06.15/P8%20ONLY_5.6.6.1%20Action%20Server%20Deployment%20Files.zip!/P8%20ONLY_5.6.6.1%20Action%20Server%20Deployment%20Files/Molina.ProcessManager.RepositoryConnector.dll'
+  - '{{ base_jfrog_url }}/{{ gainwell_common_jfrog_folder }}/iis-version-6.reg'
+  - '{{ base_jfrog_url }}/{{ gainwell_common_jfrog_folder }}/iis-version-10.reg'
+gainwell_iis_reg_10: 'iis-version-10.reg'
+gainwell_iis_reg_6: 'iis-version-6.reg'
+custom_app_dirs:
+  - 'D:\MMISApps\ActionServerControllerP8'
+  - 'D:\MMISApps\ActionServerControllerP8\FileNet\Temp'
+  - 'D:\MMISAppsData\EventLogService'
+  - 'D:\MMISAppsData\TracingService'
+  - 'D:\MMISAppsData\ActionServerControllerP8\Logs'
+  - 'D:\MMISAppsData\ActionServerControllerP8\PMCompanionApps\Rendezvous'
+  - 'D:\MMISAppsData\ActionServerControllerP8\Logs\ErrorLog\archives'
+  - 'D:\MMISAppsData\ActionServerControllerP8\Logs\InfoLog\archives'
+  - 'D:\MMISAppsData\ActionServerControllerP8\Logs\DebugLog\archives'
+  - 'D:\MMISAppsData\ActionServerControllerP8\Logs\FileNet\archives'
+
+action_server_installers:
+  - msiexec /i '{{ download_dir }}\ActionServerControllerP8.msi' TARGETDIR=D:\MMISApps\ActionServerControllerP8 AllUSERS=2 /qn
+  - msiexec /i '{{ download_dir }}\PM 5.6.6 Action Server P8 Patch.msi' INSTALLDIR=D:\MMISApps\ActionServerControllerP8 /qn
+app_folder: 'D:\MMISApps\ActionServerControllerP8'
+dll_files: 
+  - 'Molina.ProcessManager.Common.dll'
+  - 'Molina.ProcessManager.RepositoryConnector.dll'
+
+# Variables for Molina.ProcessManager.ActionServerController.exe.config
+filenet_base_url: 'ec2amaz-lhkjouu.a349119001557.amazonaws.com'
+integrated_security: 'Integrated Security=True;'
+mesdocs: 'MESDOCS:'
+FileNetP8URI: 'http://{{ filenet_base_url }}:9080/wsi/FNCEWS40MTOM/'
+FileNetP8UserID_value: 'NotRequiredAnyMore'
+FileNetP8Password_value: 'NotRequiredAnyMore'
+FileNetP8ProfessionalViewerURL: 'http://{{ filenet_base_url }}:9081/WorkplaceXT/getContent'
+FileNetP8ObjectStore_key: '<add key="FileNetP8ObjectStore" value=" " />'
+FileNetLocalFileTempPath: 'D:\MMISApps\ActionServerControllerP8\FileNet\Temp\'
+LogFile: 'D:\MMISAppsData\ActionServerControllerP8\Logs\ErrorLog.txt'
+RendezvousXmlPathDir: 'D:\MMISAppsData\ActionServerControllerP8\PMCompanionApps\Rendezvous\'
+CustomConfigDir: 'D:\MMISAppsData\ActionServerControllerP8\PMCompanionApps\PMCompanionApps.config'
+records_processed_value: '500'
+PopulateProcessAttempts: '3'
+ProcessManagerURL_value: 'http://{{ web_server_fqdn | trim }}/ProcessManager5.0P8'
+EventLogService_Server_FQDN: '{{ ansible_fqdn }}'
+TracingService_Server_FQDN: '{{ ansible_fqdn }}'
+WebLoggingService_Server_FQDN: '{{ web_server_fqdn | trim }}'
+
+config_files:
+  - name: 'PMCompanionApps.config'
+    dir: 'D:\MMISAppsData\ActionServerControllerP8\PMCompanionApps\'
+  - name: 'NLog.config'
+    dir: 'D:\MMISApps\ActionServerControllerP8\'

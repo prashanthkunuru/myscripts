@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<configuration>
+  <configSections>
+    <section name="loggingConfiguration" type="Microsoft.Practices.EnterpriseLibrary.Logging.Configuration.LoggingSettings, Microsoft.Practices.EnterpriseLibrary.Logging, Version=5.0.414.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" requirePermission="true" />
+    <section name="LogProvider" type="MolinaLoggingService.LogProviderConfigSection, MolinaLoggingService" />
+  </configSections>
+  
+  <LogProvider default="molinalogprovider">
+    <providers>
+      <!-- None = 0, Minute = 1, Hour = 2, Day = 3, Week = 4, Month = 5, Year = 6, Midnight = 7-->
+      <add name="molinalogprovider" type="LoggingService, MolinaLoggingService" RemoteURL="http://localhost:51681/LoggingService.svc" IsRemote="false" LogDetail="basic"
+           LogStoreConnectionString="Data Source={{ web_config_data_source }};Initial Catalog={{ eventlog_initial_catalog }};User Id=;Password=;Integrated Security=True;" EnableDatabaseLog="false" EnableFileLog="true" EnableEventLog="false" LogFilePath="{{ eventlog_log_file_path }}" RollInterval="3" RollSizeKB="20000" EventLogFolder="PMActionServer" EventSourceName="ProcessManager5"/>
+    </providers>
+  </LogProvider>
+  <system.web>
+    <compilation debug="true" targetFramework="4.0" />
+  </system.web>
+  <system.serviceModel>
+    <bindings>
+      <basicHttpBinding>
+        <binding name="BasicHttp" closeTimeout="00:01:00" openTimeout="00:01:00"  sendTimeout="00:01:00" receiveTimeout="00:01:00"
+                   maxBufferPoolSize="2147483647" maxReceivedMessageSize="2147483647" maxBufferSize="2147483647"/>           
+      </basicHttpBinding>
+    </bindings>
+    <behaviors>
+      <serviceBehaviors>
+        <behavior>
+          <!-- To avoid disclosing metadata information, set the value below to false and remove the metadata endpoint above before deployment -->
+          <serviceMetadata httpGetEnabled="true"/>
+          <!-- To receive exception details in faults for debugging purposes, set the value below to true.  Set to false before deployment to avoid disclosing exception information -->
+          <serviceDebug includeExceptionDetailInFaults="false"/>
+        </behavior>
+      </serviceBehaviors>
+    </behaviors>
+    <serviceHostingEnvironment multipleSiteBindingsEnabled="true" />
+  </system.serviceModel>
+ <system.webServer>
+    <modules runAllManagedModulesForAllRequests="true"/>
+  </system.webServer>
+  
+</configuration>

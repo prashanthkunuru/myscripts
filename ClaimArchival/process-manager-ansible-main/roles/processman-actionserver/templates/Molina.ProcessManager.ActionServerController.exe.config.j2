@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<configuration>
+  <connectionStrings>
+    <!-- MMS DEV-->
+    <!--<add name="PMSQLConnection" connectionString="Data Source=172.24.132.137\LABENV01;Initial Catalog=PM5SIT_IS;{{ integrated_security }}User Id=;Password=;"/>-->
+    <add name="FileNetOracleConnection" connectionString="Provider=FnDBProvider;Data Source=DefaultIMS:OADESLAB:{{ mesdocs}}FileNet;SystemType=1;LogonID="/>
+
+    <!-- Johnny QA-->
+    <!--<add name="PMSQLConnection" connectionString="Data Source=DC01CE5010DBD01.dev.core.him\CORE5010DEV;Initial Catalog=PM5_CE_ISF; User Id=;Password=;" />
+    <add name="FileNetOracleConnection" connectionString="Provider=FnDBProvider;Data Source=DefaultIMS:OADESLAB:FileNet;SystemType=1;LogonID=" />-->
+
+  </connectionStrings>
+  <appSettings>
+
+    <add key="RepositoryType" value="File-Net-IS" />
+    <add key="LogEntityID" value="ActionServerControllerIS" />
+    <add key="EventLogFolder" value="PMActionServer"/>
+    <add key="EventLogSource" value="ProcessManager5"/>
+    <add key="FileNetISLibrary" value="DefaultIMS:OADESLAB:FileNet" />
+    <add key="ProcessManagerURL" value="http://172.24.132.153/processmanager5.0IS/"/>
+    <!--<add key="FileNetISUserID" value="" />
+    <add key="FileNetISPassword" value="" />-->
+    <add key="EnableTrace" value="true"/>
+    <add key="FileNetISOpenClientVirtualPath" value="http://172.24.132.156/FNOpenClient" />
+    <add key="FileNetISOpenClientServicePage" value="/fnannoservice.asmx" />
+
+    <!--<add key="RepositoryType" value="File-Net-P8" />
+    <add key="LogEntityID" value="ActionServerControllerP8" />
+    <add key="EventLogFolder" value="PMActionServer"/>
+    <add key="EventLogSource" value="ProcessManager5"/>
+    <add key="FileNetP8URI" value="{{ FileNetP8URI }}" />
+    <add key="FileNetP8UserID" value="{{ FileNetP8UserID_value }}" />
+    <add key="FileNetP8Password" value="{{ FileNetP8Password_value }}" />
+    <add key="FileNetP8ProfessionalViewerURL" value="{{ FileNetP8ProfessionalViewerURL }}"/>-->
+	{{ FileNetP8ObjectStore_key }}
+    <add key="FileNetLocalFileTempPath" value="{{ FileNetLocalFileTempPath }}" />
+    <add key="LogFile" value ="{{ LogFile }}"/>
+    <add key="RendezvousXmlPathDir" value=" {{ RendezvousXmlPathDir }}"/>
+    <add key="CustomConfigDir" value="{{ CustomConfigDir }}" />
+    <add key="ProcessManagerURL" value="{{ ProcessManagerURL_value }}"/>
+
+    <!--Numbers of FileNET distribution queue entries processed a time.-->
+    <add key="recordsprocessed" value="{{ records_processed_value }}" />
+    <add key="PopulateProcessAttempts" value="{{ PopulateProcessAttempts }}"/>
+
+  </appSettings>
+  <startup>
+    <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.0"/>
+  </startup>
+  <system.serviceModel>
+    <bindings>
+      <basicHttpBinding>
+        <binding name="BasicHttpBinding_ILogServiceManager" closeTimeout="00:01:00"
+            openTimeout="00:01:00" receiveTimeout="00:10:00" sendTimeout="00:01:00"
+            allowCookies="false" bypassProxyOnLocal="false" hostNameComparisonMode="StrongWildcard"
+            maxBufferSize="2147483647" maxBufferPoolSize="2147483647" maxReceivedMessageSize="2147483647"
+            messageEncoding="Text" textEncoding="utf-8" transferMode="Buffered"
+            useDefaultWebProxy="true">
+          <readerQuotas maxDepth="32" maxStringContentLength="2147483647" maxArrayLength="16384"
+              maxBytesPerRead="4096" maxNameTableCharCount="16384" />
+          <security mode="None">
+            <transport clientCredentialType="None" proxyCredentialType="None"
+                realm="" />
+            <message clientCredentialType="UserName" algorithmSuite="Default" />
+          </security>
+        </binding>
+        <binding name="BasicHttpBinding_ILogServiceManager1" closeTimeout="00:01:00"
+            openTimeout="00:01:00" receiveTimeout="00:10:00" sendTimeout="00:01:00"
+            allowCookies="false" bypassProxyOnLocal="false" hostNameComparisonMode="StrongWildcard"
+            maxBufferSize="2147483647" maxBufferPoolSize="2147483647" maxReceivedMessageSize="2147483647"
+            messageEncoding="Text" textEncoding="utf-8" transferMode="Buffered"
+            useDefaultWebProxy="true">
+          <readerQuotas maxDepth="32" maxStringContentLength="2147483647" maxArrayLength="16384"
+              maxBytesPerRead="4096" maxNameTableCharCount="16384" />
+          <security mode="None">
+            <transport clientCredentialType="None" proxyCredentialType="None"
+                realm="" />
+            <message clientCredentialType="UserName" algorithmSuite="Default" />
+          </security>
+        </binding>
+        <binding name="BasicHttpBinding_ILogServiceManager2" closeTimeout="00:01:00"
+            openTimeout="00:01:00" receiveTimeout="00:10:00" sendTimeout="00:01:00"
+            allowCookies="false" bypassProxyOnLocal="false" hostNameComparisonMode="StrongWildcard"
+            maxBufferSize="2147483647" maxBufferPoolSize="2147483647" maxReceivedMessageSize="2147483647"
+            messageEncoding="Text" textEncoding="utf-8" transferMode="Buffered"
+            useDefaultWebProxy="true">
+          <readerQuotas maxDepth="32" maxStringContentLength="2147483647" maxArrayLength="16384"
+              maxBytesPerRead="4096" maxNameTableCharCount="16384" />
+          <security mode="None">
+            <transport clientCredentialType="None" proxyCredentialType="None"
+                realm="" />
+            <message clientCredentialType="UserName" algorithmSuite="Default" />
+          </security>
+        </binding>
+        <binding name="BasicHttpBinding_IProviderStatus" />
+      </basicHttpBinding>
+    </bindings>
+    <client>
+      <endpoint address="http://172.23.140.161:4444/PEA Service/ProviderStatus.svc"
+               binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_IProviderStatus"
+               contract="PEAProviderStatus.IProviderStatus" name="BasicHttpBinding_IProviderStatus" />
+      <endpoint address="http://{{ EventLogService_Server_FQDN }}/EventLogService/LoggingService.svc"
+          binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_ILogServiceManager"
+          contract="EventLogService.ILogServiceManager" name="BasicHttpBinding_ILogServiceManager" />
+      <endpoint address="http://{{ TracingService_Server_FQDN }}/TracingService/LoggingService.svc"
+          binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_ILogServiceManager1"
+          contract="TracingService.ILogServiceManager" name="BasicHttpBinding_ILogServiceManager1" />
+      <endpoint address="http://{{ WebLoggingService_Server_FQDN }}/WebLoggingService/LoggingService.svc"
+          binding="basicHttpBinding" bindingConfiguration="BasicHttpBinding_ILogServiceManager2"
+          contract="WebLoggingService.ILogServiceManager" name="BasicHttpBinding_ILogServiceManager2" />
+    </client>
+  </system.serviceModel>
+</configuration>

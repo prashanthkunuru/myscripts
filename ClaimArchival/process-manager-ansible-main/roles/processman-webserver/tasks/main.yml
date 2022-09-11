@@ -1,0 +1,457 @@
+---
+# Creating Web Server FQDN to be used in the Molina config file web server endpoint url value...
+- name: "Create Web Server FQDN variable"
+  ansible.builtin.set_fact:
+    web_server_fqdn: 
+      "{% for host in groups['PMA'] %}
+        {{ hostvars[host]['ansible_fqdn'] }}
+      {% endfor %}"
+
+# Creating and formating a D drive...
+- name: Initialize and format the D drive
+  import_tasks: initialize_disk.yml
+  
+# Creating a parent directory on the D drive for the Action Server install and Log Folder
+- name: "Creating a parent directory on the D drive for Action Server install and log folder"
+  ansible.windows.win_file:
+    path: '{{ item }}'
+    state: directory
+  loop: 
+  - 'D:\MMISAppsData\WebLogService'
+  - 'D:\MMISAppsData\TracingService'
+
+# Create a temporary directory for the JFrog Artifacts
+- name: Creating a temporary directory...
+  win_file:
+    path: "{{ download_dir }}"
+    state: directory
+  # TODO: Get this working =>  when: download_dir_info.stat.exists == False
+
+# Downloading artifacts from JFrog and putting them into the temporary directory
+- name: Downloading required software and putting it into the temp directory...
+  win_get_url:
+    url: "{{ item }}"
+    dest: "{{ download_dir }}"
+    url_username: "{{ artifactory_username }}"
+    url_password: "{{ artifactory_password }}"
+    force: no
+  loop:
+    - "https://gwproductengineering.jfrog.io/artifactory/process-manager-local/Microsoft%20WSE%203.0.msi"
+    - "https://gwproductengineering.jfrog.io/artifactory/process-manager-local/OpenXMLSDKV25.msi"
+    - "https://gwproductengineering.jfrog.io/artifactory/process-manager-local/PM%205.0%20Release%20-%205.6.6.1%20-%202017.06.15/P8%20ONLY_5.6.6.1%20Web%20Server%20Deployment%20Files.zip!/P8%20ONLY_5.6.6.1%20Web%20Server%20Deployment%20Files/Molina.ProcessManager.Common.dll"
+    - "https://gwproductengineering.jfrog.io/artifactory/process-manager-local/PM%205.0%20Release%20-%205.6.6.1%20-%202017.06.15/P8%20ONLY_5.6.6.1%20Web%20Server%20Deployment%20Files.zip!/P8%20ONLY_5.6.6.1%20Web%20Server%20Deployment%20Files/Molina.ProcessManager.RepositoryConnector.dll"
+    - "https://gwproductengineering.jfrog.io/artifactory/process-manager-local/PM%205.0%20Release%20-%205.6.6.2%20-%202019.07.19/5.6.6.2.zip!/5.6.6.2/Molina.ProcessManager.DataAccess.dll"
+    - "https://gwproductengineering.jfrog.io/artifactory/process-manager-local/PM%205.0%20Release%20-%205.6.6.3_AWS%20Email/AWS_Email_Molina.ProcessManager.Common.zip!/Molina.ProcessManager.Common.dll"
+
+# Install Web Application Pre-req software
+- name: Installing Web App Pre-Req Software(Microsoft WSE 3.0 and Open XML SDK)...
+  ansible.windows.win_package:
+    path: "{{ download_dir }}\\{{ item }}"
+    arguments: /quiet
+    state: present
+  loop:
+  - Microsoft WSE 3.0.msi
+  - OpenXMLSDKV25.msi
+
+# Updating DLL files in the \bin directory
+- name: "Copying/updating several .dll files to the application folder..."
+  ansible.windows.win_copy:
+    src: '{{ download_dir }}\{{ dll }}'
+    dest: '{{ app_folder }}'
+    remote_src: yes
+  loop: '{{ dll_files }}'
+  loop_control:
+    loop_var: dll
+
+# Installing ISS
+- name: Installing IIS and Enabling Windows Features...
+  ansible.windows.win_feature:
+    include_sub_features: yes
+    name:
+      - NET-Framework-Core
+    script: |
+      Get-WindowsFeature FS-FileServer 
+      Install-WindowsFeature FS-FileServer
+
+      Get-WindowsFeature AD-Domain-Services             
+      Install-WindowsFeature AD-Domain-Services        
+
+      Get-WindowsFeature FileAndStorage-Services
+      Install-WindowsFeature FileAndStorage-Services
+
+      Get-WindowsFeature File-Services
+      Install-WindowsFeature File-Services
+
+      Get-WindowsFeature FS-FileServer
+      Install-WindowsFeature FS-FileServer
+
+      Get-WindowsFeature Storage-Services 
+      Install-WindowsFeature Storage-Services
+
+      Get-WindowsFeature Web-Server
+      Install-WindowsFeature Web-Server
+
+      Get-WindowsFeature Web-WebServer
+      Install-WindowsFeature Web-WebServer
+
+      Get-WindowsFeature Web-Common-Http
+      Install-WindowsFeature Web-Common-Http
+
+      Get-WindowsFeature Web-Default-Doc
+      Install-WindowsFeature Web-Default-Doc
+
+      Get-WindowsFeature Web-Dir-Browsing
+      Install-WindowsFeature Web-Dir-Browsing
+
+      Get-WindowsFeature Web-Http-Errors 
+      Install-WindowsFeature Web-Http-Errors
+
+      Get-WindowsFeature Web-Static-Content
+      Install-WindowsFeature Web-Static-Content
+
+      Get-WindowsFeature Web-Http-Redirect
+      Install-WindowsFeature Web-Http-Redirect
+
+      Get-WindowsFeature Web-Health
+      Install-WindowsFeature Web-Health
+
+      Get-WindowsFeature Web-Http-Logging
+      Install-WindowsFeature Web-Http-Logging
+
+      Get-WindowsFeature Web-Log-Libraries
+      Install-WindowsFeature Web-Log-Libraries
+
+      Get-WindowsFeature Web-Request-Monitor
+      Install-WindowsFeature Web-Request-Monitor
+
+      Get-WindowsFeature Web-Http-Tracing
+      Install-WindowsFeature Web-Http-Tracing
+
+      Get-WindowsFeature Web-Performance 
+      Install-WindowsFeature Web-Performance
+      
+      Get-WindowsFeature Web-Stat-Compression
+      Install-WindowsFeature Web-Stat-Compression
+
+      Get-WindowsFeature Web-Dyn-Compression
+      Install-WindowsFeature Web-Dyn-Compression
+
+      Get-WindowsFeature Web-Security 
+      Install-WindowsFeature Web-Security
+      
+      Get-WindowsFeature Web-Filtering
+      Install-WindowsFeature Web-Filtering
+
+      Get-WindowsFeature Web-Basic-Auth
+      Install-WindowsFeature Web-Basic-Auth
+
+      Get-WindowsFeature Web-Client-Auth 
+      Install-WindowsFeature Web-Client-Auth
+      
+      Get-WindowsFeature Web-Digest-Auth
+      Install-WindowsFeature Web-Digest-Auth
+
+      Get-WindowsFeature Web-Cert-Auth
+      Install-WindowsFeature Web-Cert-Auth
+
+      Get-WindowsFeature Web-IP-Security
+      Install-WindowsFeature Web-IP-Security
+
+      Get-WindowsFeature Web-Url-Auth
+      Install-WindowsFeature Web-Url-Auth
+
+      Get-WindowsFeature Web-Windows-Auth
+      Install-WindowsFeature Web-Windows-Auth
+
+      Get-WindowsFeature Web-App-Dev 
+      Install-WindowsFeature Web-App-Dev
+
+      Get-WindowsFeature Web-Net-Ext
+      Install-WindowsFeature Web-Net-Ext
+
+      Get-WindowsFeature Web-Net-Ext45
+      Install-WindowsFeature Web-Net-Ext45
+
+      Get-WindowsFeature Web-Asp-Net
+      Install-WindowsFeature Web-Asp-Net
+
+      Get-WindowsFeature Web-Asp-Net45
+      Install-WindowsFeature Web-Asp-Net45
+
+      Get-WindowsFeature Web-ISAPI-Ext
+      Install-WindowsFeature Web-ISAPI-Ext
+
+      Get-WindowsFeature Web-ISAPI-Filter 
+      Install-WindowsFeature Web-ISAPI-Filter
+
+      Get-WindowsFeature Web-Mgmt-Tools
+      Install-WindowsFeature Web-Mgmt-Tools
+
+      Get-WindowsFeature Web-Mgmt-Console
+      Install-WindowsFeature Web-Mgmt-Console
+
+      Get-WindowsFeature Web-Mgmt-Compat
+      Install-WindowsFeature Web-Mgmt-Compat
+
+      Get-WindowsFeature Web-Metabase 
+      Install-WindowsFeature Web-Metabase
+
+      Get-WindowsFeature Web-Lgcy-Scripting
+      Install-WindowsFeature Web-Lgcy-Scripting
+
+      Get-WindowsFeature Web-WMI
+      Install-WindowsFeature Web-WMI
+
+      Get-WindowsFeature Web-Scripting-Tools
+      Install-WindowsFeature Web-Scripting-Tools
+
+      Get-WindowsFeature NET-Framework-Features
+      Install-WindowsFeature NET-Framework-Features
+
+      Get-WindowsFeature NET-Framework-Core
+      Install-WindowsFeature NET-Framework-Core
+
+      Get-WindowsFeature NET-Framework-45-Features
+      Install-WindowsFeature NET-Framework-45-Features
+
+      Get-WindowsFeature NET-Framework-45-Core
+      Install-WindowsFeature NET-Framework-45-Core
+
+      Get-WindowsFeature NET-Framework-45-ASPNET
+      Install-WindowsFeature NET-Framework-45-ASPNET
+
+      Get-WindowsFeature NET-WCF-Services45
+      Install-WindowsFeature NET-WCF-Services45
+
+      Get-WindowsFeature GPMC
+      Install-WindowsFeature GPMC
+
+      Get-WindowsFeature RSAT
+      Install-WindowsFeature RSAT
+
+      Get-WindowsFeature RSAT-Feature-Tools
+      Install-WindowsFeature RSAT-Feature-Tools
+
+      Get-WindowsFeature RSAT-SNMP
+      Install-WindowsFeature RSAT-SNMP
+
+      Get-WindowsFeature RSAT-Role-Tools
+      Install-WindowsFeature RSAT-Role-Tools
+
+      Get-WindowsFeature RSAT-AD-Tools 
+      Install-WindowsFeature RSAT-AD-Tools
+
+      Get-WindowsFeature RSAT-AD-PowerShell
+      Install-WindowsFeature RSAT-AD-PowerShell
+
+      Get-WindowsFeature RSAT-ADDS
+      Install-WindowsFeature RSAT-ADDS
+
+      Get-WindowsFeature RSAT-AD-AdminCenter
+      Install-WindowsFeature RSAT-AD-AdminCenter
+
+      Get-WindowsFeature RSAT-ADDS-Tools
+      Install-WindowsFeature RSAT-ADDS-Tools
+
+      Get-WindowsFeature FS-SMB1
+      Install-WindowsFeature FS-SMB1
+
+      Get-WindowsFeature SNMP-Service
+      Install-WindowsFeature SNMP-Service
+
+      Get-WindowsFeature Telnet-Client
+      Install-WindowsFeature Telnet-Client
+
+      Get-WindowsFeature PowerShellRoot
+      Install-WindowsFeature PowerShellRoot
+
+      Get-WindowsFeature WAS
+      Install-WindowsFeature WAS
+
+      Get-WindowsFeature WAS-Process-Model
+      Install-WindowsFeature WAS-Process-Model
+
+      Get-WindowsFeature WAS-NET-Environment
+      Install-WindowsFeature WAS-NET-Environment
+
+      Get-WindowsFeature WAS-Config-APIs
+      Install-WindowsFeature WAS-Config-APIs
+
+      Get-WindowsFeature WoW64-Support
+      Install-WindowsFeature WoW64-Support
+
+      Get-WindowsFeature XPS-Viewer
+      Install-WindowsFeature XPS-Viewer
+
+# Create a new application pool in 'Started' state
+- name: Creating a new application pool in 'Started' state...
+  community.windows.win_iis_webapppool:
+    name: ProcessManager
+    state: started
+    attributes:
+      managedRuntimeVersion: v4.0
+      managedPipelineMode: Integrated
+      enable32BitAppOnWin64: true
+      autoStart: yes
+      processModel.identityType: SpecificUser
+      processModel.userName: "{{ hcls_lev_svc_domain }}\\{{ hcls_lev_svc_username }}"
+      processModel.password: "{{ hcls_lev_svc_password }}"
+
+# Return information about existing application pool("ProcessManager")
+- name: Returning information about existing application pool("ProcessManager")...
+  community.windows.win_iis_webapppool:
+    name: ProcessManager
+    state: present
+
+# Create a virtual directory called "ProcessManager"
+- name: "Creating a virtual directory called 'ProcessManager'..."
+  win_file:
+    path: "{{ processmanager_dir }}"
+    state: directory
+    
+
+# Download the Process Manager Application and the Patches from JFrog.
+- name: Downloading Process Manager 5.0 P8 MSI & Patchs from JFrog...
+  win_get_url:
+    url: "{{ item }}"
+    dest: "{{ download_dir }}"
+    url_username: "{{ artifactory_username }}"
+    url_password: "{{ artifactory_password }}"
+    force: no
+  loop:
+    - "https://gwproductengineering.jfrog.io/artifactory/process-manager-local/PM%205.0%20Release%20-%205.6.0%20-%202015.10.09/MSI/PM%205.6.0%20Web%20Server%20Full%20Deployment.zip!/Web%20Server/ProcessManager5.0P8.msi"
+    - "https://gwproductengineering.jfrog.io/artifactory/process-manager-local/PM%205.0%20Release%20-%205.6.6%20-%202017.01.30/MSI/PM%205.6.6%20Web%20Server%20P8%20Patch.zip!/PM%205.6.6%20Web%20Server%20P8%20Patch.msi"
+    - "https://gwproductengineering.jfrog.io/artifactory/process-manager-local/jquery-1.8.1.min.js"
+
+#Application Download Intall
+- name: Installing Process Manager 5.0 P8.MSI...
+  ansible.windows.win_package:
+    path: "{{ download_dir }}\\{{ item }}"
+    arguments: /quiet
+    state: present
+  loop:
+  - ProcessManager5.0P8.msi
+  - PM 5.6.6 Web Server P8 Patch.msi
+
+# Create and configure the Process Manager web application in IIS and set the app pool
+- name: "Add Process Manager web application on IIS."
+  community.windows.win_iis_webapplication:
+    name: 'ProcessManager'
+    site: 'Default Web Site'
+    state: present
+    physical_path: '{{ download_dir }}\ProcessManager5.0P8.msi'
+    application_pool: 'ProcessManager'
+  # notify: Restart IIS
+
+# Install the DSC Module
+- name: Install xWebAdministration module
+  win_psmodule:
+    name: xWebAdministration
+    state: present
+
+# Set Windows Auth as "Enabled" & "Anonymouts Auth" as "Disabled"
+# Note: Might need to use DSC module.
+- name: "Setting Windows Auth as 'Enabled' and Anonymous Auth as 'Disabled'..."
+  win_dsc:
+    resource_name: xWebApplication
+    Name: ProcessManager5.0P8
+    Ensure: Present
+    PhysicalPath: C:\inetpub\wwwroot\ProcessManager5.0P8
+    Website: 'Default Web Site'
+    WebAppPool: ProcessManager
+    AuthenticationInfo:
+      Windows: yes
+      Anonymous: no
+
+# - name: "Providing Full Control to IIS_IUsers..."
+- name: "Adding Full control permissions to the IIS_IUSRS for Process Manager"
+  ansible.windows.win_acl:
+    path: C:\inetpub\wwwroot\ProcessManager5.0P8
+    user: IIS_IUSRS
+    rights: FullControl
+    type: allow
+    state: present
+
+# - name: Adding the .v1 extension to the Process Manager web site MIME Type configuration
+#   ansible.windows.win_powershell:
+#     script: |
+#       Add-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Filter "system.webServer/staticContent" -Name "." -Value @{ fileExtension='.v1'; mimeType='application/octet-stream' }
+
+# - name: Adding the local HTTP Response Header pairs...
+#   ansible.windows.win_powershell:
+#     script: |
+#       Add-WebConfigurationProperty -PSPath MACHINE/WEBROOT/APPHOST `
+#       -Name . -Filter system.webServer/httpProtocol/customHeaders `
+#       -AtElement @{name = "X-UA-COMPATIBLE" ; value = 'IE=EmulateIE8' }
+
+#       Add-WebConfigurationProperty -PSPath MACHINE/WEBROOT/APPHOST `
+#       -Name . -Filter system.webServer/httpProtocol/customHeaders `
+#       -AtElement @{name = "X-Content-Type-Options" ; value = 'nosniff'}
+
+
+- name: Adding Home.aspx to list of Default Documents...
+  ansible.windows.win_powershell:
+    script: |
+      add-webconfigurationproperty -PSPath 'IIS:\Sites\Default Web Site' /system.webServer/defaultDocument -name files -value @{value="Home.aspx"}
+
+# Create logging directories 
+- name: "Create logging directories"
+  ansible.windows.win_file:
+    path: '{{ custom_dir }}'
+    state: directory
+  loop: '{{ custom_app_dirs }}'
+  loop_control:
+    loop_var: custom_dir
+
+# Copy the ViewHistoryConfig.xml file
+- name: "Copy the ViewHistoryConfig.xml file"
+  ansible.windows.win_copy:
+    src: 'ViewHistoryHeaderConfig.xml'
+    dest: 'D:\MMISAppsData\ProcessManager\PMCompanionApps'
+
+# Copy the NLog config file to the correct directory
+- name: "Copying the NLog config file to the ProcessManager5.0P8 directory on the C: drive..."
+  ansible.windows.win_copy:
+    src: 'NLog.config'
+    dest: 'c:\inetpub\wwwroot\ProcessManager5.0P8'
+
+# Copy the NLog config file to the correct directory
+- name: "Copying the PMCompanionApps.config gile to PMCompanionApps Directory on the D: drive..."
+  ansible.windows.win_copy:
+    src: 'PMCompanionApps.config'
+    dest: 'D:\MMISAppsData\ProcessManager\PMCompanionApps'
+
+# Copy the min.js config file to the correct directory
+- name: "Copying the min.js file to the Scripts Directory on the C: drive..."
+  ansible.windows.win_copy:
+    remote_src: yes
+    src: '{{download_dir}}\jquery-1.8.1.min.js'
+    dest: 'C:\inetpub\wwwroot\ProcessManager5.0P8\Scripts'
+
+# Copy the NLog config file to the correct directory
+- name: "Copying the Master and config filesto the Process Manager Directory on the C: drive..."
+  ansible.windows.win_copy:
+    src: "{{ item }}"
+    dest: 'C:\inetpub\wwwroot\ProcessManager5.0P8'
+  loop:
+  - "ControlWizardMaster.Master"
+  - "document.aspx"
+  - "ExportPage.Master"
+  - "GlobalConfig.Master"
+  - "Home.aspx"
+  - "PopUp.Master"
+  - "Site.Master"
+  - "Web.Master"
+  - "Wizard.Master"
+  # - "Actionserver.Master"
+  
+# - name: Adding Home.aspx to list of Default Documents...
+#   ansible.windows.win_powershell:
+#     script: |
+#       add-webconfigurationproperty -PSPath 'IIS:\Sites\Default Web Site' /system.webServer/defaultDocument -name files -value @{value="Home.aspx"}
+
+# Create the Web.config file from a Jinja2 template.
+- name: "Create the Web.config from a Jinja2 template"
+  ansible.windows.win_template:
+    src: 'Web.config.j2'
+    dest: '{{ app_folder }}\web.config'

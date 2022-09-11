@@ -1,0 +1,79 @@
+---
+# vars file for processman-actionserver service
+
+base_jfrog_url: 'https://gwproductengineering.jfrog.io/artifactory/process-manager-local'
+gainwell_common_url: 'https://gwproductengineering.jfrog.io/artifactory/common/gainwell'
+process_manager_folder: 'process-manager-local'
+gainwell_common_folder: 'common/gainwell'
+artifacts:
+  - 'EventLoggingService.zip'
+  - 'TraceLoggingService.zip'
+  - 'WebLoggingService.zip'
+common_artifacts:
+  - 'iis-version-10.reg'
+  - 'iis-version-6.reg'
+gainwell_iis_reg_10: 'iis-version-10.reg'
+gainwell_iis_reg_6: 'iis-version-6.reg'
+app_folder: 'C:\inetpub\wwwroot\ProcessManager5.0P8'
+dll_files:
+  - 'Molina.ProcessManager.Common.dll'
+  - 'Molina.ProcessManager.RepositoryConnector.dll'
+  - 'Molina.ProcessManager.DataAccess.dll'
+  - 'Molina.ProcessManager.Common.dll'
+
+# Variables for Molina.ProcessManager.ActionServerController.exe.config
+integrated_security: 'Integrated Security=True;'
+mesdocs: 'MESDOCS:'
+# Original FileNetP8URI: http://dc01p8cedv02.dev.core.him:9080/wsi/FNCEWS40MTOM/
+FileNetP8URI: ''
+FileNetP8UserID_value: 'NotRequiredAnyMore'
+FileNetP8Password_value: 'NotRequiredAnyMore'
+# Original FileNetP8ProfessionalViewerURL: http://dc01p8cedv02.dev.core.him:9081/WorkplaceXT/getContent
+FileNetP8ProfessionalViewerURL: ''
+FileNetP8ObjectStore_key: '<add key="FileNetP8ObjectStore" value=" " />'
+FileNetLocalFileTempPath: 'D:\Program Files (x86)\Process Manager\FileNetTempDir\'
+LogFile: 'D:\Program Files (x86)\Process Manager\Logs\ErrorLog.txt'
+RendezvousXmlPathDir: 'D:\Program Files (x86)\Process Manager\PMCompanionApps\Rendezvous\'
+CustomConfigDir: 'D:\Program Files (x86)\Process Manager\PMCompanionApps\PMCompanionApps.config'
+records_processed_value: '500'
+PopulateProcessAttempts: '3'
+ProcessManagerURL_value: 'http://<FQDN>/<VirtualRoot>'
+EventLogService_Server_FQDN: '{{ ansible_fqdn }}'
+TracingService_Server_FQDN: '{{ ansible_fqdn }}'
+WebLoggingService_Server_FQDN: '{{ ansible_fqdn }}'
+
+# Variables for the web.config files for the logging IIS applications
+datasource: ''
+initial_catalog: ''
+log_file_path: ''
+event_log_folder: '' 
+event_source_name: ''
+remote_url: '{{ ansible_fqdn }}'
+
+compilation_debug: true
+view_header_history_config: 'D:\program files\process mangaer\pmcompanionapps\ViewHistoryHeaderConfig.xml'
+use_old_light_viewer: false
+
+# Client Endpoints
+eventLogService_Server_FQDN: '{{ ansible_fqdn }}'
+tracingService_Server_FQDN: '{{ ansible_fqdn }}'
+webLoggingService_Server_FQDN: '{{ web_server_fqdn | trim }}'
+
+custom_app_dirs:
+  - 'D:\MMISAppsData\ProcessManager\Logs\DebugLog\archives'
+  - 'D:\MMISAppsData\ProcessManager\Logs\FileNet\archives'
+  - 'D:\MMISAppsData\ProcessManager\Logs\InfoLog\archives'
+  - 'D:\MMISAppsData\ProcessManager\Logs\ErrorLog\archives'
+  - 'D:\MMISAppsData\ProcessManager\PMCompanionApps'
+  - 'D:\MMISAppsData\ProcessManager\FileNet\Temp'
+# domain: '{{ hcls_lev_svc_domain }}'
+
+
+filenet_object_store: 'P8DOCS'
+filenet_username: ''
+filenet_machine_name: ''
+wcf_database_server: ''
+wcf_database_catalog: ''
+
+filenet_base_url: 'ec2amaz-lhkjouu.a349119001557.amazonaws.com'
+fileNetP8URI: 'http://{{ filenet_base_url }}:9080/wsi/FNCEWS40MTOM/'

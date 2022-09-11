@@ -1,0 +1,94 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="PopUp.master.cs" Inherits="Molina.ProcessManager.UI.PopUpMaster" %>
+
+<%@ Register Assembly="Telerik.Web.UI, Version=2011.3.1115.35, Culture=neutral, PublicKeyToken=121fae78165ba3d4"
+    Namespace="Telerik.Web.UI" TagPrefix="telerik" %>
+<%@ Register Src="~/UserControl/ErrorSummaryUC.ascx" TagName="ErrorSummaryUC" TagPrefix="ErrorSummary" %>
+<%@ Register Src="~/UserControl/SessionTimeoutForPopup.ascx" TagName="SessionTimeout" TagPrefix="uc1" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head id="Head1" runat="server">
+    <title></title>
+    <link rel="stylesheet" type="text/css" id="stylesheet" />
+    <script type="text/javascript" src="Scripts/jquery-1.8.1.min.js"></script>
+
+    <telerik:RadScriptBlock ID="RadScriptBlock1" runat="server">
+        <script language="javascript" type="text/javascript" src="Scripts/DynamicControl.js"></script>
+        <%--<script src="/Scripts/jquery-1.4.1.min.js" type="text/javascript"></script>--%>
+        <%--        <script language="javascript" src="Scripts/CommonMasterScript.js" type="text/javascript"></script>--%>
+    </telerik:RadScriptBlock>
+    <asp:ContentPlaceHolder ID="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body role="application">
+    <%--   onkeydown="CancelBackSpace()">--%>
+    <form id="formPopupMaster" runat="server">
+    <div class="contentiframe">
+        <div>
+            <telerik:RadScriptManager ID="radScriptManager" runat="server" AsyncPostBackTimeout="180">
+            </telerik:RadScriptManager>
+            <telerik:RadAjaxManager ID="radAJAXManager" runat="server">
+            </telerik:RadAjaxManager>
+            <asp:ValidationSummary DisplayMode="BulletList" Visible="true" ID="vsProcessManager"
+                runat="server" ShowSummary="true" EnableClientScript="true" ForeColor="Red" role="alert" />
+            <asp:Panel ID="pnlErrorSummary" runat="server">
+                <ErrorSummary:ErrorSummaryUC ID="ucErrorSummary" runat="server" />
+            </asp:Panel>
+            <asp:ContentPlaceHolder ID="cphPopUPContent" runat="server">
+            </asp:ContentPlaceHolder>
+        </div>
+        <div class="main">
+            <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+        </div>
+    </div>
+    <uc1:SessionTimeout ID="UCSessionTimeout" runat="server" />
+    </form>
+</body>
+</html>
+<telerik:RadWindow ID="confirmWindow" runat="server" VisibleTitlebar="false" VisibleStatusbar="false"
+    Modal="true" Behaviors="None" Height="200px" Width="400px" EnableAriaSupport="true">
+</telerik:RadWindow>
+<telerik:RadWindowManager ID="radWindowManager" runat="server" EnableAriaSupport="true">
+    <Windows>
+        <telerik:RadWindow ID="rwBrowseQAction" runat="server" OnClientClose="BrowseQActionDone"
+            NavigateUrl="" AutoSize="false" Modal="true" ShowContentDuringLoad="false" VisibleStatusbar="false"
+            ReloadOnShow="true" Overlay="false" Behaviors="Close" InitialBehaviors="Close"
+            VisibleOnPageLoad="false" DestroyOnClose="false" EnableAriaSupport="true"/>
+    </Windows>
+</telerik:RadWindowManager>
+<%--<telerik:RadScriptBlock ID="RadScriptBlock2" runat="server">
+    <script type="text/javascript" language="javascript">
+
+        //Session timeout logic starts
+
+        var sessionTimeoutWarning = '<%= System.Configuration.ConfigurationSettings.AppSettings["SessionWarning"].ToString() %>';
+        var sessionTimeout = "<%= Session.Timeout  %>";
+        var timeOnPageLoad = new Date();
+        var SessionWarningTimer = null;
+        var ClosePageTimer = null;
+
+        //For Warning
+        SessionWarningTimer = setTimeout('SessionWarning()', parseInt(sessionTimeout) * 60 * 1000);
+
+        //Redirect to home page
+        ClosePageTimer = setTimeout('ClosePage()', parseInt(sessionTimeout) * 60 * 1000);
+
+        //Session Warning
+        function SessionWarning() {
+            var minutesToExpire = (parseInt(sessionTimeout) - parseInt(sessionTimeoutWarning));
+
+            //If session time is over. Exit session
+            var currentTime = new Date();
+
+            //time for expiry
+            var timeForExpiry = timeOnPageLoad.setMinutes(timeOnPageLoad.getMinutes() + parseInt(sessionTimeout));
+        }
+
+        //Session Timeout
+        function ClosePage() {
+            window.close();
+        }
+
+        //Session Timeout logic ends
+
+    </script>
+</telerik:RadScriptBlock>--%>

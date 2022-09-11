@@ -1,0 +1,223 @@
+---
+# tasks file for Claim Archival
+
+# Check to see if the temp download directory exists.
+- name: "Check if {{ download_dir }} exists"
+  ansible.windows.win_stat:
+    path: '{{ download_dir }}'
+  register: download_dir_info
+
+# Create the temporary directory to pull down the artifacts to install Corticon.  
+- name: "Create {{ download_dir }} directory for artifact downloads"
+  ansible.windows.win_file:
+    path: '{{ download_dir }}'
+    state: directory
+  when: download_dir_info.stat.exists == False
+
+# Download artifacts for Claim Archival installation.
+# Block  
+- name: "Download Claim Archival installation artifacts from the JFrog Artifactory Claim Archival repository"
+  ansible.windows.win_get_url:    
+    url: '{{ base_jfrog_url }}/{{ item }}'
+    dest: '{{ download_dir }}\{{ item }}'
+    url_username: '{{ artifactory_username }}'
+    url_password: '{{ artifactory_password }}'
+    force: no
+  loop: '{{ artifacts }}'
+
+# Download common artifacts for Claim Archival installation.  
+- name: "Download Logging installation artifacts from the JFrog Artifactory common repository"
+  ansible.windows.win_get_url:    
+    url: '{{ gainwell_common_url }}/{{ item }}'
+    dest: '{{ download_dir }}\{{ item }}'
+    url_username: '{{ artifactory_username }}'
+    url_password: '{{ artifactory_password }}'
+    force: no
+  loop: '{{ common_artifacts }}'
+
+# Unzip the artifacts into the temp folder on the C:\ drive
+- name: "Unzip installation artifact zip files to {{ download_dir }}"
+  community.windows.win_unzip:
+    src: '{{ download_dir }}\{{ item }}'
+    dest: '{{ download_dir }}'
+  loop: '{{ artifacts }}'
+
+# Create and configure the Claim Archival application pool in IIS 
+- name: "Create the Claim Archival application pool"
+  community.windows.win_iis_webapppool:
+    name: LoggingAppPool
+    state: started
+    attributes:
+      managedRuntimeVersion: v4.0
+      managedPipelineMode: Integrated
+      autoStart: yes
+      processModel.identityType: SpecificUser
+      processModel.userName: '{{ hcls_lev_svc_domain}}\{{ hcls_lev_svc_username }}'
+      processModel.password: '{{ hcls_lev_svc_password }}'
+      processModel.loadUserProfile: false
+
+# Registry entry that the installers look for to verify IIS verson.
+# The installers to not recognize version 10, so this reg merge will
+# update the key to show IIS version 6 for the installer to work. 
+- name: Merge in the IIS registry file for app installations
+  community.windows.win_regmerge:
+    path: '{{ download_dir }}\{{ gainwell_iis_reg_6 }}'
+
+# Install the appropriate Claim Archival on the Action server
+- name: Install the appropriate Logging services on the Action server.
+  ansible.windows.win_package:
+    path: '{{ installer.path }}'
+    arguments: /quiet
+    state: present
+  loop:
+    '{{ logging_services }}'
+  loop_control:
+    loop_var: installer
+  when: 
+    - "tags.host_type|upper == 'PMA'"
+    - '"ActionServer" in installer.installed_on or "ALL" in installer.installed_on'
+
+# Install the appropriate Claim Archival services on the Web Application server
+- name: Install the appropriate Logging services on the Web Application server.
+  ansible.windows.win_package:
+    path: '{{ installer.path }}'
+    arguments: /quiet
+    state: present
+  loop:
+    '{{ logging_services }}'
+  loop_control:
+    loop_var: installer
+  when:
+    - tags.host_type|upper == 'PMW'
+    - '"WebApplicationServer" in installer.installed_on or "ALL" in installer.installed_on'
+
+# Registry entry that sets the IIS version back to 10 after app installs. 
+- name: Merge in the IIS registry file post-application installation
+  community.windows.win_regmerge:
+    path: '{{ download_dir }}\{{ gainwell_iis_reg_10 }}'
+
+# Create and configure the Claim Archival IIS applications on the Action Server
+- name: "Convert service folders to web applications in IIS."
+  community.windows.win_iis_webapplication:
+    name: '{{ iis_service.iis_app_name }}'
+    site: '{{ iis_service.iis_app_site }}'
+    state: present
+    physical_path: '{{ iis_service.iis_app_path }}'
+    application_pool: '{{ iis_service.iis_app_pool }}'
+  loop:
+    '{{ logging_services }}'
+  loop_control:
+    loop_var: iis_service
+  when:
+    - "tags.host_type|upper == 'PMA'"
+    - '"ActionServer" in iis_service.installed_on or "ALL" in iis_service.installed_on'
+  notify: 
+  - Restart IIS
+
+# Create and configure the Claim Archival IIS applications on the Web Server
+- name: "Convert service folders to web applications in IIS."
+  community.windows.win_iis_webapplication:
+    name: '{{ iis_service.iis_app_name }}'
+    site: '{{ iis_service.iis_app_site }}'
+    state: present
+    physical_path: '{{ iis_service.iis_app_path }}'
+    application_pool: '{{ iis_service.iis_app_pool }}'
+  loop:
+    '{{ logging_services }}'
+  loop_control:
+    loop_var: iis_service
+  when:
+    - tags.host_type|upper == 'PMW'
+    - '"WebApplicationServer" in iis_service.installed_on or "ALL" in iis_service.installed_on'
+  notify: 
+  - Restart IIS
+
+# Set Anonymous Auth to Enabled
+- name: "Set Web Application Anonymous Auth to Enabled"
+  win_dsc:
+    resource_name: xWebApplication
+    Name: '{{ iis_auth.iis_app_name }}'
+    Ensure: Present
+    PhysicalPath: '{{ iis_auth.iis_app_path }}'
+    Website: '{{ iis_auth.iis_app_site }}'
+    WebAppPool: '{{ iis_auth.iis_app_pool }}'
+    AuthenticationInfo:
+      Anonymous: yes
+  loop:
+    '{{ logging_services }}'
+  loop_control:
+    loop_var: iis_auth
+  when:
+    - tags.host_type|upper == 'PMA'
+    - '"ActionServer" in iis_auth.installed_on or "ALL" in iis_auth.installed_on'
+
+# Set Anonymous Auth to Enabled
+- name: "Set Web Application Anonymous Auth to Enabled"
+  win_dsc:
+    resource_name: xWebApplication
+    Name: '{{ iis_auth.iis_app_name }}'
+    Ensure: Present
+    PhysicalPath: '{{ iis_auth.iis_app_path }}'
+    Website: '{{ iis_auth.iis_app_site }}'
+    WebAppPool: '{{ iis_auth.iis_app_pool }}'
+    AuthenticationInfo:
+      Anonymous: yes
+  loop:
+    '{{ logging_services }}'
+  loop_control:
+    loop_var: iis_auth
+  when:
+    - tags.host_type|upper == 'PMW'
+    - '"WebApplicationServer" in iis_auth.installed_on or "ALL" in iis_auth.installed_on'
+
+# Configure the IIS_IUSRS to have Full Control NTFS permissions on the folder
+# of the IIS logging services web applications.
+- name: "Add IIS_IUSRS Full Control permissions to the logging applications"
+  ansible.windows.win_acl:
+    path: '{{ acl.iis_app_path }}'
+    user: IIS_IUSRS
+    rights: FullControl
+    type: allow
+    state: present
+  loop: '{{ logging_services }}'
+  loop_control:
+    loop_var: acl
+  when:
+    - "tags.host_type|upper == 'PMA'"
+    - '"ActionServer" in acl.installed_on or "ALL" in acl.installed_on'
+
+- name: "Add IIS_IUSRS Full Control permissions to the logging applications"
+  ansible.windows.win_acl:
+    path: '{{ acl.iis_app_path }}'
+    user: IIS_IUSRS
+    rights: FullControl
+    type: allow
+    state: present
+  loop: '{{ logging_services }}'
+  loop_control:
+    loop_var: acl
+  when:
+    - tags.host_type|upper == 'PMW'
+    - '"WebApplicationServer" in acl.installed_on or "ALL" in acl.installed_on'
+
+- name: Create web.config files for logging IIS applications from a Jinja2 template
+  ansible.windows.win_template:
+    src: '{{ web_config.iis_web_config }}'
+    dest: '{{ web_config.iis_app_path }}\web.config'
+  loop: '{{ logging_services }}'
+  loop_control:
+    loop_var: web_config
+  when:
+    - "tags.host_type|upper == 'PMA'"
+    - '"ActionServer" in web_config.installed_on or "ALL" in web_config.installed_on'
+
+- name: Create web.config files for logging IIS applications from a Jinja2 template
+  ansible.windows.win_template:
+    src: '{{ web_config.iis_web_config }}'
+    dest: '{{ web_config.iis_app_path }}\web.config'
+  loop: '{{ logging_services }}'
+  loop_control:
+    loop_var: web_config
+  when:
+    - tags.host_type|upper == 'PMW'
+    - '"WebApplicationServer" in web_config.installed_on or "ALL" in web_config.installed_on'

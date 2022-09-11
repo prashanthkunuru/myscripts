@@ -1,0 +1,56 @@
+---
+# Copied from: https://github.com/mygainwell/RA-Project-Reload/tree/main/roles/MSSQL-Disks/tasks
+# and then modified and compiled into a single playbook.
+#############################################################################
+# This could be problematic for AO clusters or 
+# anything that shares disks between systems.
+#############################################################################
+- name: Modify disk policy to online all new disks
+  win_shell: "Set-StorageSetting -NewDiskPolicy OnlineAll"
+  tags:
+    - processman_disks
+
+#############################################################################
+# No Ansible Module currently exists for disk initialization,
+# so it is run as a powershell command instead.
+#############################################################################
+- name: Initialize Disks
+  win_shell: "Initialize-Disk -Number {{ item }}"
+  register: initialize_disks
+  failed_when:
+  - "'disk has already been initialized' not in initialize_disks.stderr"
+  - initialize_disks.rc == 1
+  changed_when:
+  - ("'disk has already been initialized' not in initialize_disks.stderr" and initialize_disks.rc == 1) or initialize_disks.rc == 0
+  loop:
+  - 1
+  tags:
+    - processman_disks
+    
+#############################################################################
+# Create GPT Partitions
+#############################################################################
+- name: Create GPT Partitions
+  win_partition: 
+    drive_letter: "{{ item.letter }}"
+    partition_size: -1
+    disk_number: "{{ item.number }}"
+  loop:
+  - { letter: D, number: 1}
+  tags:
+    - processman_disks
+
+#############################################################################
+# Format Drive
+#############################################################################
+- name: Format Drives with 64k blocks
+  win_format:
+    drive_letter: "{{ item.letter }}"
+    file_system: ntfs
+    new_label: "{{ item.name }}"  
+    allocation_unit_size: 65536
+    full: false
+  loop:
+  - { letter: D, name: data}
+  tags:
+    - processman_disks

@@ -1,0 +1,213 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="GlobalConfig.master.cs"
+    Inherits="ProcessManager.GlobalConfig1" %>
+
+<%@ Register Assembly="Telerik.Web.UI, Version=2011.3.1115.35, Culture=neutral, PublicKeyToken=121fae78165ba3d4"
+    Namespace="Telerik.Web.UI" TagPrefix="telerik" %>
+<%@ Register Src="~/UserControl/SessionTimeout.ascx" TagName="SessionTimeout" TagPrefix="uc1" %>
+<%@ Register Src="~/UserControl/FileNetLogout.ascx" TagName="FileNetLogout" TagPrefix="uc1" %>
+<%@ Register assembly="Telerik.Web.UI" namespace="Telerik.Web.UI" tagprefix="telerik" %>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>Global Configuration</title>
+    <link href="Styles/Site.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="Scripts/jquery-1.8.1.min.js"></script>
+    <script language="javascript" src="Scripts/CommonMasterScript.js" type="text/javascript"></script>
+    <asp:ContentPlaceHolder ID="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body onkeydown="CancelBackSpace()" role="application">
+    <form id="form1" runat="server">
+    <telerik:RadScriptManager ID="radScriptManager" runat="server" AsyncPostBackTimeout="1200">
+    </telerik:RadScriptManager>
+    <telerik:RadAjaxManager ID="radAjaxManager" runat="server">
+    </telerik:RadAjaxManager>
+    <table cellpadding="0" cellspacing="0" id="outContainer">
+        <tr>
+            <td class="whiteContent">
+                <table cellpadding="0" cellspacing="0" id="header" class="inHome" width="100%">
+                    <tr>
+                        <td id="logo" style="padding-right:30px">
+                            <div class="logo">
+                                <h1>
+                                    Health PAS</h1>
+                            </div>
+                        </td>
+                        <td class="sublogo">
+                            <asp:Image ID="Image1" runat="server" ImageUrl="~/Images/globalconfiglogo.png" /><span>Process
+                                Manager System Configuration Options</span>
+                        </td>
+                        <td class="headerRight">
+                            <table width="100%" cellspacing="0" cellpadding="0">
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2">
+                                            <ul>
+                                                <li>
+                                                    <asp:Label ID="username" runat="server" Text="Welcome &lt; User Name &gt;"></asp:Label>
+                                                </li>
+                                                
+                                                <li>
+                                                    <telerik:RadButton ID="logout" runat="server" ButtonType="LinkButton" Text="Home"
+                                                        NavigateUrl="Home.aspx">
+                                                    </telerik:RadButton>
+                                                </li>
+                                                <li>
+                                                    <uc1:FileNetLogout ID="FileNetLogout" runat="server" />
+                                                </li>
+                                                <li>
+                                                    <telerik:RadButton ID="help" runat="server" ButtonType="LinkButton" Text="Help" OnClientClicking="helpClicked">
+                                                    </telerik:RadButton>
+                                                </li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fontIncre">
+                                        </td>
+                                        <td class="molinLogo">
+                                            <asp:Image ID="Image2" runat="server" ImageUrl="~/Images/Molina_logo.png" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                <%--<table cellspacing="0" cellpadding="0" class="navigation globalconf">
+                    <tbody>
+                        <tr>
+                            <td>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>--%>
+                <table cellpadding="0" cellspacing="0" class="content" style="border:1px solid #d1d6d0;">
+                    <tr>
+                        <td class="minheight">
+                            <table cellpadding="0" cellspacing="0" width="100%">
+                                <%--<tr>
+                                    <td class="subSelection">
+                                        <telerik:RadButton id="DataSource" runat="server" ButtonType="LinkButton" Text="Data Source">                    
+                </telerik:RadButton>
+                <telerik:RadButton id="Repository" runat="server" ButtonType="LinkButton" Text="Repository">
+                </telerik:RadButton>
+                <telerik:RadButton id="PMserver" runat="server" ButtonType="LinkButton" Text="Process Manager Server">
+                </telerik:RadButton>
+                <telerik:RadButton id="WebServer" runat="server" ButtonType="LinkButton" Text="Web Server">
+                </telerik:RadButton>
+                                        <telerik:RadButton ID="Wizards" runat="server" ButtonType="LinkButton" Text="Wizards">
+                                        </telerik:RadButton>
+                                    </td>
+                                </tr>--%>
+                                <tr>
+                                    <td class="contentstart">
+                                        <div>
+                                            <asp:ContentPlaceHolder ID="ContentPlaceHolder1" runat="server">
+                                            </asp:ContentPlaceHolder>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <!--footer-->
+                <table cellpadding="0" cellspacing="0" class="footer">
+                    <tr>
+                        <td>
+                            © &nbsp;
+                            <asp:Label ID="Label1" runat="server"></asp:Label>
+                        </td>
+                    </tr>
+                </table>
+                <!--footer-->
+            </td>
+        </tr>
+    </table>
+    <telerik:RadWindowManager ID="radWindowManager" runat="server" EnableAriaSupport="true">
+        <Windows>
+            <telerik:RadWindow ID="RadWindow1" runat="server" AutoSize="false" Modal="true" ShowContentDuringLoad="false"
+                VisibleStatusbar="false" ReloadOnShow="true" Overlay="false" NavigateUrl="Userpreference.aspx"
+                OpenerElementID="ImageButton1" Width="670" Behaviors="Close" InitialBehaviors="Close"
+                Height="560" VisibleOnPageLoad="false" EnableAriaSupport="true">
+            </telerik:RadWindow>
+        </Windows>
+    </telerik:RadWindowManager>
+    <uc1:SessionTimeout ID="UCSessionTimeout" runat="server" />
+    </form>
+</body>
+</html>
+<telerik:RadScriptBlock ID="RadScriptBlock1" runat="server">
+    <script type="text/javascript" language="javascript">
+
+        //        // Session Timeout Code Starts
+
+        //        var sessionTimeoutWarning = '<%= System.Configuration.ConfigurationSettings.AppSettings["SessionWarning"].ToString() %>';
+        //        var sessionTimeout = "<%= Session.Timeout  %>";
+        //        var timeOnPageLoad = new Date();
+        //        var SessionWarningTimer = null;
+        //        var RedirectToHomePageTimer = null;
+
+        //        //For Warning
+        //        SessionWarningTimer = setTimeout('SessionWarning()', parseInt(sessionTimeoutWarning) * 60 * 1000);
+
+        //        //Redirect to home page
+        //        RedirectToHomePageTimer = setTimeout('RedirectToHomePage()', parseInt(sessionTimeout) * 60 * 1000);
+
+        //        //Session Warning
+        //        function SessionWarning() {
+        //            var minutesToExpire = (parseInt(sessionTimeout) - parseInt(sessionTimeoutWarning));
+
+        ////            var message = "Your session will expire in another " + minutesToExpire + " minutes. Please confirm your actions.";
+        //            //            alert(message);
+        //            Warning("Open");
+
+        //            //If session time is over. Exit session
+        //            var currentTime = new Date();
+
+        //            //time for expiry
+        //            var timeForExpiry = timeOnPageLoad.setMinutes(timeOnPageLoad.getMinutes() + parseInt(sessionTimeout));
+        //        }
+
+        //        //Session Timeout
+        //        function RedirectToHomePage() {
+        //            alert("Session expired. You will be redirected to home page.");
+        //            window.location = "SessionExpiry.aspx";
+        //        }
+
+        //        function Warning(Argument) {
+        //            if (Argument == "Open") {
+        //                Win_Warning = window.open('Warning.htm', 'Win_Warning', 'top=225,screenY=225,left=425,width=300,height=150,scrollbars=no,scrollbar=no,menubar=no');
+        //                setTimeout("Warning('Close')", 10000);
+        //            }
+        //            if (Argument == "Close") {
+        //                if (Win_Warning.closed + "" == "false") {
+        //                    Win_Warning.close();
+        //                }
+        //                else {
+        //                }
+        //            }
+        //        }
+
+        //        //Session Timeout Code ends
+
+        function redirectFn() {
+            window.location = "Home.aspx";
+        }
+        function helpClicked(sender, args) {
+            Sys.Application.remove_load(helpClicked);
+            var wnd = $find('<%= RadWindow1.ClientID %>')
+            wnd.set_width(700);
+            wnd.set_height(500);
+            wnd.setUrl("Help.aspx");
+            wnd.SetTitle("Help");
+            wnd.Show();
+            args.set_cancel(true);
+        }  
+    </script>
+</telerik:RadScriptBlock>

@@ -1,0 +1,26 @@
+---
+- name: Creating a temporary directory...
+  win_file:
+    path: "{{ download_dir }}"
+    state: directory
+
+- name: Downloading required software...
+  win_get_url:
+    url: "{{ item }}"
+    dest: "{{ download_dir }}"
+    url_username: "{{ artifactory_username }}"
+    url_password: "{{ artifactory_password }}"
+    force: no
+  loop:
+    - ""
+
+- name: Installing [package-name]...
+  ansible.windows.win_package:
+    path: "{{ download_dir }}\\{{ item }}"
+    arguments: /q
+    state: present
+  loop:
+  - 
+
+
+  

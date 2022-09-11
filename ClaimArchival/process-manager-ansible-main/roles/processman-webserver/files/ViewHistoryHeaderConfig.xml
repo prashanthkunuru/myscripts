@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<workclasses>
+  <workclass name="WorkClassB">
+    <headeritem indexname="workobjectid" displayorder="1" />
+    <headeritem indexname="assigneduser" displayorder="2" />
+    <headeritem indexname="systemmessage" displayorder="3" />
+    <headeritem indexname="statusmessage" displayorder="4" />
+    <headeritem indexname="queuedate" displayorder="5" />
+  </workclass>
+</workclasses>
